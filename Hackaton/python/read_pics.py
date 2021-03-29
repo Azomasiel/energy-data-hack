@@ -29,30 +29,34 @@ def read_double_tab(f, n):
         return prm
     
 def get_pics_from_file(filename):
-    # Lecture du fichier d'infos + pics detectes (post-processing KeyFinder)
     print("Ouverture du fichier de pics "+filename)
-    f_pic = open(filename, "rb")
-    info = dict()
-    info["nb_pics"] = read_int(f_pic)
-    print("Nb pics par trame: " + str(info["nb_pics"]))
-    info["freq_sampling_khz"] = read_double(f_pic)
-    print("Frequence d'echantillonnage: " + str(info["freq_sampling_khz"]) + " kHz")
-    info["freq_trame_hz"] = read_double(f_pic)
-    print("Frequence trame: " + str(info["freq_trame_hz"]) + " Hz")
-    info["freq_pic_khz"] = read_double(f_pic)
-    print("Frequence pic: " + str(info["freq_pic_khz"]) + " kHz")
-    info["norm_fact"] = read_double(f_pic)
-    print("Facteur de normalisation: " + str(info["norm_fact"]))
-    tab_pics = []
-    pics = read_double_tab(f_pic, info["nb_pics"])
-    nb_trames = 1
-    while len(pics) > 0:
-        nb_trames = nb_trames+1
-        tab_pics.append(pics)
-        pics = read_double_tab(f_pic, info["nb_pics"])
-    print("Nb trames: " + str(nb_trames))
-    f_pic.close()
-    return tab_pics, info
+    with open(filename, "rb") as f:
+        # Get info header
+        info = {}
+        info["nb_pics"] = read_int(f)
+        print("Nb pics par trame: " + str(info["nb_pics"]))
+        info["freq_sampling_khz"] = read_double(f)
+        print("Frequence d'echantillonnage: " + str(info["freq_sampling_khz"]) + " kHz")
+        info["freq_trame_hz"] = read_double(f)
+        print("Frequence trame: " + str(info["freq_trame_hz"]) + " Hz")
+        info["freq_pic_khz"] = read_double(f)
+        print("Frequence pic: " + str(info["freq_pic_khz"]) + " kHz")
+        info["norm_fact"] = read_double(f)
+        print("Facteur de normalisation: " + str(info["norm_fact"]))
+
+        # Parse pics
+        pics = []
+        nb_trames = 1
+        while True:
+            nb_trames += 1
+            item = read_double_tab(f, info["nb_pics"])
+            if len(item) != info["nb_pics"]:
+                break
+            item = np.array(item)
+            pics.append(np.array(item))
+        pics = np.stack(pics, axis=0)
+        print("Nb trames: " + str(nb_trames))
+        return pics, info
 
 if __name__ == "__main__":
     pics_nokey, info = get_pics_from_file("../data/pics_NOKEY.bin")

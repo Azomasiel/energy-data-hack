@@ -1,47 +1,6 @@
 import numpy as np
+from read_pics import get_pics_from_file
 from PIL import Image
-
-def read_int(f):
-    ba = bytearray(4)
-    f.readinto(ba)
-    prm = np.frombuffer(ba, dtype=np.int32)
-    return prm[0]
-
-def read_double(f):
-    ba = bytearray(8)
-    f.readinto(ba)
-    prm = np.frombuffer(ba, dtype=np.double)
-    return prm[0]
-
-def read_double_tab(f, n):
-    ba = bytearray(8*n)
-    nr = f.readinto(ba)
-    if nr != len(ba):
-        return []
-    else:
-        prm = np.frombuffer(ba, dtype=np.double)
-        return prm
-
-def get_pics_from_file(filename):
-    with open(filename, "rb") as f:
-        # Get info header
-        info = {}
-        info["nb_pics"] = read_int(f)
-        info["freq_sampling_khz"] = read_double(f)
-        info["freq_trame_hz"] = read_double(f)
-        info["freq_pic_khz"] = read_double(f)
-        info["norm_fact"] = read_double(f)
-
-        # Parse pics
-        pics = []
-        while True:
-            item = read_double_tab(f, info["nb_pics"])
-            if len(item) != info["nb_pics"]:
-                break
-            item = np.array(item)
-            pics.append(np.array(item))
-        pics = np.stack(pics, axis=0)
-        return pics, info
 
 if __name__ == '__main__':
     pics_pad0, info = get_pics_from_file("../data/pics_NOKEY.bin")
