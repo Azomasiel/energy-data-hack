@@ -23,23 +23,25 @@ def read_double_tab(f, n):
         return prm
 
 def get_pics_from_file(filename):
-    f_pic = open(filename, "rb")
-    info = dict()
-    info["nb_pics"] = read_int(f_pic)
-    info["freq_sampling_khz"] = read_double(f_pic)
-    info["freq_trame_hz"] = read_double(f_pic)
-    info["freq_pic_khz"] = read_double(f_pic)
-    info["norm_fact"] = read_double(f_pic)
-    tab_pics = []
-    pics = read_double_tab(f_pic, info["nb_pics"])
-    nb_trames = 1
-    while len(pics) > 0:
-        nb_trames = nb_trames+1
-        tab_pics.append(pics)
-        pics = read_double_tab(f_pic, info["nb_pics"])
-    f_pic.close()
-    return tab_pics, info
+    with open(filename, "rb") as f:
+        # Get info header
+        info = {}
+        info["nb_pics"] = read_int(f)
+        info["freq_sampling_khz"] = read_double(f)
+        info["freq_trame_hz"] = read_double(f)
+        info["freq_pic_khz"] = read_double(f)
+        info["norm_fact"] = read_double(f)
 
+        # Parse pics
+        pics = []
+        while True:
+            item = read_double_tab(f, info["nb_pics"])
+            if len(item) != info["nb_pics"]:
+                break
+            item = np.array(item)
+            pics.append(np.array(item))
+        pics = np.stack(pics, axis=0)
+        return pics, info
 
 if __name__ == '__main__':
     pics_pad0, info = get_pics_from_file("../data/pics_NOKEY.bin")
