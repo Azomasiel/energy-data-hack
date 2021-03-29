@@ -82,4 +82,3 @@ if __name__ == "__main__":
     plt.grid(b=True, which='both')
     #
     plt.show()
-    

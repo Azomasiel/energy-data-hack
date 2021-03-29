@@ -4,7 +4,7 @@ from PIL import Image
 
 if __name__ == '__main__':
     pics_pad0, info = get_pics_from_file("../data/pics_NOKEY.bin")
-    pics_a, info = get_pics_from_file("../data/pics_CTRL.bin")
+    pics_a, info = get_pics_from_file("../data/pics_LOGINMDP.bin")
 
     img = Image.new('L', (info["nb_pics"], len(pics_pad0)))
     pixels = []

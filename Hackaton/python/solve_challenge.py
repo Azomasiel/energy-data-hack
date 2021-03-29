@@ -2,46 +2,7 @@ import numpy as np
 import glob
 import random
 from PIL import Image
-
-def read_int(f):
-    ba = bytearray(4)
-    f.readinto(ba)
-    prm = np.frombuffer(ba, dtype=np.int32)
-    return prm[0]
-
-def read_double(f):
-    ba = bytearray(8)
-    f.readinto(ba)
-    prm = np.frombuffer(ba, dtype=np.double)
-    return prm[0]
-
-def read_double_tab(f, n):
-    ba = bytearray(8*n)
-    nr = f.readinto(ba)
-    if nr != len(ba):
-        return []
-    else:
-        prm = np.frombuffer(ba, dtype=np.double)
-        return prm
-
-def get_pics_from_file(filename):
-    f_pic = open(filename, "rb")
-    info = dict()
-    info["nb_pics"] = read_int(f_pic)
-    info["freq_sampling_khz"] = read_double(f_pic)
-    info["freq_trame_hz"] = read_double(f_pic)
-    info["freq_pic_khz"] = read_double(f_pic)
-    info["norm_fact"] = read_double(f_pic)
-    tab_pics = []
-    pics = read_double_tab(f_pic, info["nb_pics"])
-    nb_trames = 1
-    while len(pics) > 0:
-        nb_trames = nb_trames+1
-        tab_pics.append(pics)
-        pics = read_double_tab(f_pic, info["nb_pics"])
-    f_pic.close()
-    return tab_pics, info
-
+from read_pics import get_pics_from_file
 
 chunks = [
     (1481, 1836),
@@ -108,10 +69,10 @@ class GenFuzz:
         pass
 
 if __name__ == '__main__':
-    pics_nokey, info = get_pics_from_file("./data/pics_NOKEY.bin")
+    pics_nokey, info = get_pics_from_file("../data/pics_NOKEY.bin")
     keys = []
 
-    for key_file in glob.glob("./data/pics_*.bin"):
+    for key_file in glob.glob("../data/pics_*.bin"):
         if "LOGINMDP" in key_file or "NOKEY" in key_file:
             continue
 
@@ -134,7 +95,7 @@ if __name__ == '__main__':
         acc /= len(pics_cur)
         keys.append(Key(key, acc))
 
-    pics_login, info = get_pics_from_file("./data/pics_LOGINMDP.bin")
+    pics_login, info = get_pics_from_file("../data/pics_LOGINMDP.bin")
 
     # Denoise the data
     for i, cur_frame in enumerate(pics_login):
