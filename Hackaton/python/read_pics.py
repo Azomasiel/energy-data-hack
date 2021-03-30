@@ -12,7 +12,7 @@ def read_int(f):
     f.readinto(ba)
     prm = np.frombuffer(ba, dtype=np.int32)
     return prm[0]
-    
+
 def read_double(f):
     ba = bytearray(8)
     f.readinto(ba)
@@ -27,22 +27,22 @@ def read_double_tab(f, n):
     else:
         prm = np.frombuffer(ba, dtype=np.double)
         return prm
-    
+
 def get_pics_from_file(filename):
-    print("Ouverture du fichier de pics "+filename)
+    # print("Ouverture du fichier de pics "+filename)
     with open(filename, "rb") as f:
         # Get info header
         info = {}
         info["nb_pics"] = read_int(f)
-        print("Nb pics par trame: " + str(info["nb_pics"]))
+        # print("Nb pics par trame: " + str(info["nb_pics"]))
         info["freq_sampling_khz"] = read_double(f)
-        print("Frequence d'echantillonnage: " + str(info["freq_sampling_khz"]) + " kHz")
+        # print("Frequence d'echantillonnage: " + str(info["freq_sampling_khz"]) + " kHz")
         info["freq_trame_hz"] = read_double(f)
-        print("Frequence trame: " + str(info["freq_trame_hz"]) + " Hz")
+        # print("Frequence trame: " + str(info["freq_trame_hz"]) + " Hz")
         info["freq_pic_khz"] = read_double(f)
-        print("Frequence pic: " + str(info["freq_pic_khz"]) + " kHz")
+        # print("Frequence pic: " + str(info["freq_pic_khz"]) + " kHz")
         info["norm_fact"] = read_double(f)
-        print("Facteur de normalisation: " + str(info["norm_fact"]))
+        # print("Facteur de normalisation: " + str(info["norm_fact"]))
 
         # Parse pics
         pics = []
@@ -55,7 +55,7 @@ def get_pics_from_file(filename):
             item = np.array(item)
             pics.append(np.array(item))
         pics = np.stack(pics, axis=0)
-        print("Nb trames: " + str(nb_trames))
+        # print("Nb trames: " + str(nb_trames))
         return pics, info
 
 if __name__ == "__main__":

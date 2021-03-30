@@ -1,8 +1,8 @@
 import numpy as np
 import glob
 import random
-from PIL import Image
 from read_pics import get_pics_from_file
+
 
 chunks = [
     (1481, 1836),
@@ -32,6 +32,7 @@ chunks = [
     (9839, 9982),
 ]
 
+
 class Key:
     def __init__(self, name, mean):
         self.name = name
@@ -44,89 +45,56 @@ class Key:
         return self.__str__()
 
 
-def mean_slice(s):
-    acc = None
+def solve():
+    login, _ = get_pics_from_file("./data/pics_LOGINMDP.bin")
+    noise, _ = get_pics_from_file("./data/pics_NOKEY.bin")
 
-    for e in s:
-        if acc is None:
-            acc = e
-        else:
-            acc += e
+    mean_noise = np.mean(noise, axis=0)
+    login_denoised = np.subtract(login, mean_noise)
 
-    return acc / len(s)
-
-
-class GenFuzz:
-    MAX_KEY_COUNT = 2
-
-    def __init__(self, corpus, target, population=100):
-        self.corpus = corpus
-        self.target = target
-        self.entities = []
-        self.population = population
-
-    def __generate_random_pop(self):
-        pass
-
-if __name__ == '__main__':
-    pics_nokey, info = get_pics_from_file("../data/pics_NOKEY.bin")
     keys = []
 
-    for key_file in glob.glob("../data/pics_*.bin"):
+    # Load all key data
+    for key_file in glob.glob("./data/pics_*.bin"):
         if "LOGINMDP" in key_file or "NOKEY" in key_file:
             continue
 
         key = key_file.split("pics_")[1].replace(".bin", "")
         pics_cur, info = get_pics_from_file(key_file)
-        acc = None
 
-        for i, cur_frame in enumerate(pics_cur):
-            if i >= len(pics_nokey):
-                break
+        key_mean_denoise = np.mean(np.subtract(pics_cur, mean_noise), axis=0)
+        keys.append(Key(key, key_mean_denoise))
 
-            nokey_frame = pics_nokey[i]
-            denoised = cur_frame - nokey_frame
+    second_keys = keys + [Key("NOKEY", np.zeros(len(mean_noise), dtype=np.double))]
 
-            if acc is None:
-                acc = denoised
-            else:
-                acc += denoised
-
-        acc /= len(pics_cur)
-        keys.append(Key(key, acc))
-
-    pics_login, info = get_pics_from_file("../data/pics_LOGINMDP.bin")
-
-    # Denoise the data
-    for i, cur_frame in enumerate(pics_login):
-        pics_login[i] = cur_frame - pics_nokey[i]
-
-    # Test first slice
+    # Associate key(s) to a chunk
     for low, high in chunks:
-        first_slice = pics_login[low:high]
-        first_slice_mean = mean_slice(first_slice)
+        chunk_mean = np.mean(login_denoised[low:high], axis=0)
+        min_score = 100000.0
+        best_keys = []
 
-        # Try to find the best candidate combination
-        nokey_mean = np.zeros(len(first_slice_mean), dtype=np.double)
-
-        right_keys = keys + [Key("NOKEY", nokey_mean)]
-        min_score = 1000000.0
-
-        best = None
-
-        # Key one
-        for i in range(len(keys)):
-            for y in range(len(right_keys)):
-                sum_of_means = (keys[i].mean + right_keys[y].mean)
-                score = np.linalg.norm(first_slice_mean - sum_of_means)
+        for first_key in keys:
+            for second_key in second_keys:
+                score = np.linalg.norm(chunk_mean - (first_key.mean + second_key.mean))
 
                 if score < min_score:
                     min_score = score
-                    best = [keys[i], right_keys[y]]
+                    best_keys.append((score, [first_key, second_key]))
 
-        result = list(filter(lambda a: a.name not in ["NOKEY"], best))
+        best_keys = sorted(best_keys, key=lambda a: a[0])
 
-        for key in result:
-            print(key.name, end=" ")
+        print(f"chunks[{low},{high}]:")
 
-        print("")
+        for i in range(3):
+            candidate = best_keys[i]
+            print(f"  Candidate {i+1} (score: {candidate[0]}):", end="")
+
+            for key in candidate[1]:
+                if key.name not in ["NOKEY"]:
+                    print(key.name, end=" ")
+
+            print("")
+
+
+if __name__ == '__main__':
+    solve()
