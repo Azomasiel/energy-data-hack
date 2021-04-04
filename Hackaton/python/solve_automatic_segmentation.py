@@ -1,36 +1,9 @@
 import numpy as np
 import glob
 import random
+from sklearn.cluster import AgglomerativeClustering
+from scipy import ndimage
 from read_pics import get_pics_from_file
-
-
-chunks = [
-    (1481, 1836),
-    (1837, 2140),
-    (3011, 3222),
-    (3223, 3323),
-    (3324, 3677),
-    (3679, 3781),
-    (3786, 4032),
-    (4033, 4141),
-    (4143, 4421),
-    (4423, 4563),
-    (4565, 4821),
-    (4824, 4970),
-    (4973, 5067),
-    (5909, 6058),
-    (6272, 6419),
-    (6617, 6735),
-    (7024, 7155),
-    (7425, 7539),
-    (7813, 7931),
-    (8178, 8297),
-    (8552, 8670),
-    (8897, 9028),
-    (9188, 9336),
-    (9539, 9670),
-    (9839, 9982),
-]
 
 
 class Key:
@@ -51,6 +24,23 @@ def solve():
 
     mean_noise = np.mean(noise, axis=0)
     login_denoised = np.subtract(login, mean_noise)
+    login_denoised_smooth = ndimage.gaussian_filter1d(login_denoised, 10, 0)
+
+    # Split the input into segments
+    ac = AgglomerativeClustering(compute_full_tree=True, distance_threshold=9, n_clusters=None)
+    yac = ac.fit_predict(login_denoised_smooth)
+
+    print(f"Cluster count: {ac.n_clusters_}")
+
+    chunks_index = [0]
+    for i in range(yac.size - 1):
+        if yac[i] != yac[i+1]:
+            chunks_index.append(i)
+
+    chunks_index.append(yac.size)
+    chunks = [(x,y) for x,y in zip(chunks_index[:-1], chunks_index[1:])]
+
+    print(len(chunks))
 
     keys = []
 
@@ -66,6 +56,7 @@ def solve():
         keys.append(Key(key, key_mean_denoise))
 
     second_keys = keys + [Key("NOKEY", np.zeros(len(mean_noise), dtype=np.double))]
+    selected_keys = [] # List of the selected best keys
 
     # Associate key(s) to a chunk
     for low, high in chunks:
@@ -89,11 +80,19 @@ def solve():
             candidate = best_keys[i]
             print(f"  Candidate {i+1} (score: {candidate[0]}):", end="")
 
+            presses = []
+
             for key in candidate[1]:
                 if key.name not in ["NOKEY"]:
                     print(key.name, end=" ")
+                    presses.append(key.name)
+
+            if i == 0:
+                selected_keys.append("+".join(presses))
 
             print("")
+
+    print(f"Selected keys: {', '.join(selected_keys)}")
 
 
 if __name__ == '__main__':
